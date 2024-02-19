@@ -1,6 +1,9 @@
 package com.example.taskmanagement;
 
+import static androidx.core.content.ContextCompat.startActivity;
+
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,7 +22,7 @@ import java.util.LinkedList;
 
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     private LinkedList<Tache> taches;
-    private Context context;
+    private  Context context;
     // Provide a suitable constructor (depends on the kind of dataset)
     public MyAdapter(LinkedList<Tache> taches, Context context) {
         this.taches = new LinkedList<Tache>() ;
@@ -41,6 +44,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     public void onBindViewHolder(MyViewHolder holder, int position) {
     // - get element from your dataset at this position
     // - replace the contents of the view with that element
+        holder.task=taches.get(position);
         holder.title.setText(taches.get(position).getTitle());
     // Reference to an image file in Cloud Storage
         StorageReference storageReference =
@@ -59,8 +63,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
-    public static class MyViewHolder extends RecyclerView.ViewHolder implements
+    public class MyViewHolder extends RecyclerView.ViewHolder implements
             View.OnClickListener {
+
+        Tache task;
         public TextView title;
         public ImageView img;
         // Context is a reference to the activity that contain the the recycler view
@@ -72,7 +78,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
         }
         @Override
         public void onClick(View v) {
-
+            Intent MyIntent= new Intent(context, TaskActivity.class);
+            MyIntent.putExtra("task", task);
+            context.startActivity(MyIntent);
         }
     }
 }
