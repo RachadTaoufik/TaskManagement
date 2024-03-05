@@ -1,13 +1,18 @@
 package com.example.taskmanagement;
 
+import static android.content.Intent.EXTRA_TEXT;
 import static androidx.core.content.ContextCompat.startActivity;
 
 import android.content.Context;
 import android.content.Intent;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import androidx.recyclerview.widget.RecyclerView;
@@ -64,7 +69,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
     // Complex data items may need more than one view per item, and
     // you provide access to all the views for a data item in a view holder
     public class MyViewHolder extends RecyclerView.ViewHolder implements
-            View.OnClickListener {
+            View.OnClickListener, View.OnLongClickListener {
 
         Tache task;
         public TextView title;
@@ -75,6 +80,9 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
             title =itemLayoutView.findViewById(R.id.title);
             img= itemLayoutView.findViewById(R.id.img);
             itemLayoutView.setOnClickListener(this);
+            itemLayoutView.setOnLongClickListener(this);
+
+
         }
         @Override
         public void onClick(View v) {
@@ -82,5 +90,38 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.MyViewHolder> {
             MyIntent.putExtra("task", task);
             context.startActivity(MyIntent);
         }
+
+        @Override
+        public boolean onLongClick(View view) {
+            PopupMenu popup = new PopupMenu(context, view);
+            MenuInflater inflater = popup.getMenuInflater();
+            inflater.inflate(R.menu.tache_menu, popup.getMenu());
+
+            popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+
+                public boolean onMenuItemClick(MenuItem item) {
+                    if (item.getItemId()==R.id.afficher) {
+                        Intent MyIntent= new Intent(context, TaskActivity.class);
+                        MyIntent.putExtra("task", task);
+                        context.startActivity(MyIntent);
+                    }
+
+                    if (item.getItemId()==R.id.partager) {
+                        Intent MyIntent= new Intent();
+                        MyIntent.setAction(Intent.ACTION_SEND);
+                        MyIntent.putExtra(EXTRA_TEXT, task.getDescription());
+                        MyIntent.setType("text/plain");
+                        context.startActivity(MyIntent);
+
+                    }
+
+                    return true;
+                }
+            });
+
+            popup.show();
+            return true;
+        }
+
     }
 }

@@ -11,8 +11,13 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuInflater;
 import android.view.View;
+import android.widget.EditText;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -26,6 +31,7 @@ import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.LinkedList;
 
+import dao.TacheDao;
 import model.Tache;
 
 public class TasksActivity extends AppCompatActivity implements View.OnClickListener {
@@ -41,8 +47,7 @@ public class TasksActivity extends AppCompatActivity implements View.OnClickList
     LinkedList<Tache> taches;
 
     ProgressDialog progdiag;
-
-
+    EditText search;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +64,31 @@ public class TasksActivity extends AppCompatActivity implements View.OnClickList
         add=findViewById(R.id.fab_add);
         add.setOnClickListener(this);
         progdiag=new ProgressDialog(this);
+        search=(EditText) findViewById(R.id.search);
+
+        search.addTextChangedListener(new TextWatcher() {
+          @Override
+          public void afterTextChanged(Editable s) {
+
+          }
+          @Override
+          public void beforeTextChanged(CharSequence s, int start, int count, int after){
+
+          }
+          @Override
+          public void onTextChanged(CharSequence s, int start, int before, int count) {
+              LinkedList<Tache> filtres= new LinkedList<Tache> ();
+              for (Tache tache:taches){
+                    if (tache.getTitle().contains(s) || tache.getDescription().contains(s)){
+                        filtres.add(tache);
+                    }
+              MyAdapter myAdapter = new MyAdapter(filtres,TasksActivity.this);
+              myRecycler.setAdapter(myAdapter);
+              }
+          }
+      }
+      );
+
 
 
         //edittext beforetextchanged aftertextchanged ontextchanged
@@ -66,15 +96,19 @@ public class TasksActivity extends AppCompatActivity implements View.OnClickList
         //l'adapter et le recyclerviex'
        // MyAdapter myAdapter = new MyAdapter(taches,TasksActivity.this);
         //myRecycler.setAdapter(myAdapter);
-
-
+        getTasks();
 
     }
 
+    protected void  onStart(){
+        super.onStart();
+
+    }
     @Override
     protected void onResume() {
         super.onResume();
-        getTasks();
+
+
     }
 
     void getTasks(){
@@ -84,55 +118,29 @@ public class TasksActivity extends AppCompatActivity implements View.OnClickList
             //on a encore le droit d’accéder au thread principal du Gui
             protected void onPreExecute(){
                 showDialog();
-
             }
 
-            //La tâches principale du thread
-            //on a pas droit d‘accéder au composantes du thread principal du  GUI
             protected Object doInBackground(Object[] objects) {
-                DocumentReference docRef = db.collection("user").document(user.getEmail());
-                docRef.collection("tasks").get()
-                        .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
-                            @Override
-                            public void onComplete(@NonNull Task<QuerySnapshot> task) {
-                                if (task.isSuccessful()) {
-
-                                    for (QueryDocumentSnapshot document : task.getResult()) {
-                                        Tache tache= new Tache(document.getString("title"),document.getString("description"),document.getString("deadline"),document.getString("img"));
-                                        taches.add(tache);
-                                    }
-                                    myRecycler.setHasFixedSize(true);
-                                    // use a linear layout manager
-                                    LinearLayoutManager layoutManager = new LinearLayoutManager(TasksActivity.this);
-                                    myRecycler.setLayoutManager(layoutManager);
-                                    // specify an adapter (see also next example)
-                                    MyAdapter myAdapter = new MyAdapter(taches,TasksActivity.this);
-                                    myRecycler.setAdapter(myAdapter);
-                                } else {
-                                    Log.d("not ok", "Error getting documents: ", task.getException());
-                                }
-                            }
-                        });
-      return null;
-
+                TacheDao dao= new TacheDao(user,db);
+                taches.addAll(dao.getAllTaches());
+                return null;
             }
 
             //exécuter des tàches pendant la réalisation de la tâche principale du thread
             //on a encore le droit d’accéder au thread principal du Gui
-            protected void onProgressUpdate(Integer... progress) {
+            protected void onProgressUpdate(Integer... progress) {}
 
-            }
-
-            //exécuter des taches après la terminaison du thread courant
-//on a encore le droit d’accéder au thread principal du Gui
             protected void onPostExecute(Object result) {
+                myRecycler.setHasFixedSize(true);
+                // use a linear layout manager
+                LinearLayoutManager layoutManager = new LinearLayoutManager(TasksActivity.this);
+                myRecycler.setLayoutManager(layoutManager);
+                // specify an adapter (see also next example)
+                MyAdapter myAdapter = new MyAdapter(taches,TasksActivity.this);
+                myRecycler.setAdapter(myAdapter);
                 hideDialog();
             }
         }.execute();
-
-
-
-
 
     }
 
@@ -148,15 +156,14 @@ public class TasksActivity extends AppCompatActivity implements View.OnClickList
         progdiag= new ProgressDialog(this);
         progdiag.setMessage("Veuillez patienter, les donnees sont en cours de chargement ... ");
         progdiag.setIndeterminate(true);
-        progdiag.show();
 
+        progdiag.show();
     }
 
     void hideDialog(){
         progdiag.dismiss();
-
-
     }
+
 
 
 }
